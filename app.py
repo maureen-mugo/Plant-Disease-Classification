@@ -5,7 +5,7 @@ from PIL import Image
 import io
 
 # Load model
-learn_inf = load_learner("export.pkl", cpu=True)
+learn_inf = load_learner("export.pkl")
 
 # Classifier
 def classify_img(data):
