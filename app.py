@@ -1,14 +1,19 @@
 from fastcore.all import *
 from fastai.vision.all import *
 import streamlit as st
+from PIL import Image
+import io
 
-## LOAD MODEl
+# Load model
 learn_inf = load_learner("export.pkl")
-## CLASSIFIER
+
+# Classifier
 def classify_img(data):
-    pred, pred_idx, probs = learn_inf.predict(data)
+    img = PILImage.create(data)
+    pred, pred_idx, probs = learn_inf.predict(img)
     return pred, probs[pred_idx]
-## STREAMLIT
+
+# Streamlit
 st.title("Plant Disease Detection")
 bytes_data = None
 uploaded_image = st.file_uploader("Upload image")
