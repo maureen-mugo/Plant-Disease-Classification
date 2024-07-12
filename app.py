@@ -17,13 +17,27 @@ def classify_img(data):
 
 # Streamlit
 st.title("Plant Disease Detection")
+
+# Description paragraph
+description = """
+This project is trained on tomato, soybean, grape, apple, cassava, coffee, chilli, corn, cherry, guava, cucumber, lemon, 
+mango, jamun, peach, pepper bell, rice, potato, sugarcane, strawberry, tea, wheat, pomegranate plants disease dataset.
+"""
+st.write(description)
+
+# Image uploader
 bytes_data = None
 uploaded_image = st.file_uploader("Upload image")
 if uploaded_image:
     bytes_data = uploaded_image
     st.image(bytes_data, caption="Uploaded image")
+
+# Classification
 if bytes_data:
     classify = st.button("CLASSIFY!")
     if classify:
         label, confidence = classify_img(bytes_data)
-        st.write(f"It is a {label}! ({confidence:.04f})")
+        if confidence < 0.8:
+            st.write("Not within trained class")
+        else:
+            st.write(f"It is a {label}! ({confidence:.04f})")
