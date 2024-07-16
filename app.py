@@ -37,7 +37,7 @@ if bytes_data:
     classify = st.button("CLASSIFY!")
     if classify:
         label, confidence = classify_img(bytes_data)
-        if confidence < 0.2:
+        if confidence < 0.1:
             st.write("Not within trained class")
         else:
             st.write(f"It is a {label}! ({confidence:.04f})")
