@@ -5,65 +5,20 @@ from PIL import Image
 import requests
 import os
 
-def download_file_from_google_drive(file_id, destination):
-    URL = "https://docs.google.com/uc?export=download"
-
-    session = requests.Session()
-    response = session.get(URL, params={'id': file_id}, stream=True)
-    token = get_confirm_token(response)
-
-    if token:
-        params = {'id': file_id, 'confirm': token}
-        response = session.get(URL, params=params, stream=True)
-
-    save_response_content(response, destination)
-
-def get_confirm_token(response):
-    for key, value in response.cookies.items():
-        if key.startswith('download_warning'):
-            return value
-    return None
-
-def save_response_content(response, destination):
-    CHUNK_SIZE = 32768
-
-    with open(destination, "wb") as f:
-        for chunk in response.iter_content(CHUNK_SIZE):
-            if chunk:  # filter out keep-alive new chunks
-                f.write(chunk)
-
-@st.cache_resource
+@st.cache(allow_output_mutation=True)
 def download_and_load_model():
-    google_drive_file_id = '1aypQw2s9Qge_FPjUbj7WqwujqOT8etA4'
+    model_url = "https://huggingface.co/maureenmugo/Plant_disease_classification/resolve/main/export.pkl"
     model_path = "export.pkl"
 
     # Download the model if it doesn't exist
     if not os.path.exists(model_path):
-        try:
-            download_file_from_google_drive(google_drive_file_id, model_path)
-            st.write("Model downloaded successfully.")
-        except Exception as e:
-            st.error(f"Error downloading the model: {e}")
-            return None
-
-    # Verify if the downloaded file is a valid pickle file
-    try:
-        with open(model_path, 'rb') as f:
-            first_byte = f.read(1)
-            if first_byte != b'\x80':  # Check for the pickle protocol indicator
-                st.error("Downloaded file is not a valid pickle file.")
-                return None
-    except Exception as e:
-        st.error(f"Error verifying the model file: {e}")
-        return None
-
+        response = requests.get(model_url)
+        with open(model_path, 'wb') as f:
+            f.write(response.content)
+    
     # Load the model
-    try:
-        learn = load_learner(model_path)
-        return learn
-    except Exception as e:
-        st.error(f"Error loading the model: {e}")
-        return None
+    learn = load_learner(model_path)
+    return learn
 
 st.title("Plant Disease Detection")
 
@@ -76,16 +31,11 @@ st.write(description)
 
 st.write("Loading model...")
 learn_inf = download_and_load_model()
-if learn_inf is not None:
-    st.write("Model loaded successfully!")
-else:
-    st.stop()  # Stop execution if model loading failed
+st.write("Model loaded successfully!")
 
 # Classifier
 def classify_img(data):
     img = PILImage.create(data)
-    # Resize the image to 256x256
-    img = img.resize((256, 256))
     # Disable progress bar
     with learn_inf.no_bar():
         pred, pred_idx, probs = learn_inf.predict(img)
