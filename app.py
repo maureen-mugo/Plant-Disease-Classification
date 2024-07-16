@@ -5,20 +5,30 @@ from PIL import Image
 import requests
 import os
 
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def download_and_load_model():
     model_url = "https://huggingface.co/maureenmugo/Plant_disease_classification/resolve/main/export.pkl"
     model_path = "export.pkl"
 
     # Download the model if it doesn't exist
     if not os.path.exists(model_path):
-        response = requests.get(model_url)
-        with open(model_path, 'wb') as f:
-            f.write(response.content)
+        try:
+            response = requests.get(model_url)
+            response.raise_for_status()  # Check if the request was successful
+            with open(model_path, 'wb') as f:
+                f.write(response.content)
+            st.write("Model downloaded successfully.")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Error downloading the model: {e}")
+            return None
     
     # Load the model
-    learn = load_learner(model_path)
-    return learn
+    try:
+        learn = load_learner(model_path)
+        return learn
+    except Exception as e:
+        st.error(f"Error loading the model: {e}")
+        return None
 
 st.title("Plant Disease Detection")
 
@@ -31,7 +41,10 @@ st.write(description)
 
 st.write("Loading model...")
 learn_inf = download_and_load_model()
-st.write("Model loaded successfully!")
+if learn_inf is not None:
+    st.write("Model loaded successfully!")
+else:
+    st.stop()  # Stop execution if model loading failed
 
 # Classifier
 def classify_img(data):
