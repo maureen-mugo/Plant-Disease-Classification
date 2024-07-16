@@ -2,20 +2,24 @@ from fastcore.all import *
 from fastai.vision.all import *
 import streamlit as st
 from PIL import Image
-import io
+import requests
+import os
 
-# Load model
-learn_inf = load_learner("export.pkl")
+@st.cache(allow_output_mutation=True)
+def download_and_load_model():
+    model_url = "https://huggingface.co/maureenmugo/Plant_disease_classification/resolve/main/export.pkl"
+    model_path = "export.pkl"
 
-# Classifier
-def classify_img(data):
-    img = PILImage.create(data)
-    # Disable progress bar
-    with learn_inf.no_bar():
-        pred, pred_idx, probs = learn_inf.predict(img)
-    return pred, probs[pred_idx]
+    # Download the model if it doesn't exist
+    if not os.path.exists(model_path):
+        response = requests.get(model_url)
+        with open(model_path, 'wb') as f:
+            f.write(response.content)
+    
+    # Load the model
+    learn = load_learner(model_path)
+    return learn
 
-# Streamlit
 st.title("Plant Disease Detection")
 
 # Description paragraph
@@ -24,6 +28,20 @@ This project is trained on tomato, soybean, grape, apple, cassava, coffee, chill
 mango, jamun, peach, pepper bell, rice, potato, sugarcane, strawberry, tea, wheat, pomegranate plants disease dataset.
 """
 st.write(description)
+
+st.write("Loading model...")
+learn_inf = download_and_load_model()
+st.write("Model loaded successfully!")
+
+# Classifier
+def classify_img(data):
+    img = PILImage.create(data)
+    # Resize the image to 256x256
+    img = img.resize((256, 256))
+    # Disable progress bar
+    with learn_inf.no_bar():
+        pred, pred_idx, probs = learn_inf.predict(img)
+    return pred, probs[pred_idx]
 
 # Image uploader
 bytes_data = None
