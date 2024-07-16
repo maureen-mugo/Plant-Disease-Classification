@@ -16,7 +16,7 @@ def download_file_from_google_drive(file_id, destination):
         params = {'id': file_id, 'confirm': token}
         response = session.get(URL, params=params, stream=True)
 
-    save_response_content(response, destination)    
+    save_response_content(response, destination)
 
 def get_confirm_token(response):
     for key, value in response.cookies.items():
@@ -34,7 +34,6 @@ def save_response_content(response, destination):
 
 @st.cache_resource
 def download_and_load_model():
-    # Replace 'your_google_drive_file_id' with your actual Google Drive file ID
     google_drive_file_id = '1aypQw2s9Qge_FPjUbj7WqwujqOT8etA4'
     model_path = "export.pkl"
 
@@ -46,7 +45,18 @@ def download_and_load_model():
         except Exception as e:
             st.error(f"Error downloading the model: {e}")
             return None
-    
+
+    # Verify if the downloaded file is a valid pickle file
+    try:
+        with open(model_path, 'rb') as f:
+            first_byte = f.read(1)
+            if first_byte != b'\x80':  # Check for the pickle protocol indicator
+                st.error("Downloaded file is not a valid pickle file.")
+                return None
+    except Exception as e:
+        st.error(f"Error verifying the model file: {e}")
+        return None
+
     # Load the model
     try:
         learn = load_learner(model_path)
