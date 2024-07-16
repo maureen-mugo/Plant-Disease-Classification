@@ -5,20 +5,45 @@ from PIL import Image
 import requests
 import os
 
+def download_file_from_google_drive(file_id, destination):
+    URL = "https://docs.google.com/uc?export=download"
+
+    session = requests.Session()
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = {'id': file_id, 'confirm': token}
+        response = session.get(URL, params=params, stream=True)
+
+    save_response_content(response, destination)    
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+    return None
+
+def save_response_content(response, destination):
+    CHUNK_SIZE = 32768
+
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk:  # filter out keep-alive new chunks
+                f.write(chunk)
+
 @st.cache_resource
 def download_and_load_model():
-    model_url = "https://huggingface.co/maureenmugo/Plant_disease_classification/resolve/main/export.pkl"
+    # Replace 'your_google_drive_file_id' with your actual Google Drive file ID
+    google_drive_file_id = '1aypQw2s9Qge_FPjUbj7WqwujqOT8etA4'
     model_path = "export.pkl"
 
     # Download the model if it doesn't exist
     if not os.path.exists(model_path):
         try:
-            response = requests.get(model_url)
-            response.raise_for_status()  # Check if the request was successful
-            with open(model_path, 'wb') as f:
-                f.write(response.content)
+            download_file_from_google_drive(google_drive_file_id, model_path)
             st.write("Model downloaded successfully.")
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             st.error(f"Error downloading the model: {e}")
             return None
     
