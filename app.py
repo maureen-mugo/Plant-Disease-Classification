@@ -43,7 +43,7 @@ st.write(description)
 
 # st.write("Loading model...")
 learn_inf = download_and_load_model()
-st.write("Model loaded successfully!")
+#st.write("Model loaded successfully!")
 
 # Image uploader
 bytes_data = None
@@ -57,7 +57,7 @@ if bytes_data:
     classify = st.button("CLASSIFY!")
     if classify:
         label, confidence = classify_img(bytes_data)
-        if confidence < 0.1:
+        if confidence < 0.4:
             st.write("Not within trained class")
         else:
             st.write(f"It is a {label}! ({confidence:.04f})")
